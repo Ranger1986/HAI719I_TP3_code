@@ -62,6 +62,11 @@ glm::mat4 ProjectionMatrix;
 
 glm::mat4 MVP(2.0f);
 
+float shader_scale = 1;
+GLfloat shader_scaleLocation;
+Vec3 shader_translate = Vec3(0,0,0);
+GLfloat shader_translateLocation;
+
 glm::mat4 getViewMatrix(){
 	return ViewMatrix;
 }
@@ -241,11 +246,43 @@ void key (unsigned char keyPressed, int x, int y) {
     case 'w':
         camera_position += cameraSpeed * camera_target;
         break;
+    case '+': //Press + key to increase scale
+        shader_scale-=0.005;
+        glUniform1f(shader_scaleLocation,shader_scale);
+        break;
 
+    case '-': //Press - key to decrease scale
+        shader_scale+=0.005;
+        glUniform1f(shader_scaleLocation,shader_scale);
+        break;
+
+    case 'd': //Press d key to translate on x positive
+        //Completer : mettre à jour le x du Vec3 translate
+        shader_translate[0]+=0.005;
+        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+        break;
+
+    case 'q': //Press q key to translate on x negative
+        //Completer : mettre à jour le y du Vec3 translate
+        shader_translate[0]-=0.005;
+        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+        break;
+
+    case 'z': //Press z key to translate on y positive
+        //Completer : mettre à jour le y du Vec3 translate
+        shader_translate[1]+=0.005;
+        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+        break;
+
+    case 'x': //Press s key to translate on y negative
+        //Completer : mettre à jour le y du Vec3 translate
+        shader_translate[1]-=0.005;
+        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+        break;
     default:
         break;
     }
-    //TODO add translations
+    //TODO add translationsscale
     idle ();
 }
 
@@ -378,6 +415,8 @@ int main (int argc, char ** argv) {
 
     GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP[0][0]);
+    shader_scaleLocation = glGetUniformLocation(programID, "scale");
+    shader_translateLocation = glGetUniformLocation(programID, "translate");
     glutMainLoop ();
 
     // Cleanup VBO and shader
