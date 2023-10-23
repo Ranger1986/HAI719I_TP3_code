@@ -64,9 +64,9 @@ glm::mat4 MVP1(1.0f);
 glm::mat4 MVP2(1.0f);
 glm::mat4 MVP3(1.0f);
 
-float shader_scale = 2;
+float shader_scale = 1;
 GLfloat shader_scaleLocation;
-Vec3 shader_translate = Vec3(-1,-2,0);
+Vec3 shader_translate = Vec3(0,0,0);
 GLfloat shader_translateLocation;
 float MVP3_rotation=0;
 
@@ -240,12 +240,13 @@ void draw () {
                 );
 
     */
+   
     // Afficher une troisieme chaise!
     Vec3 axe_rotation=normalize(cross(Vec3(0,1,0),Vec3(1,1,1)));
     float cosAngle = dot(Vec3(0,1,0),Vec3(1,1,1));
     Vec3 centre_gravite=Vec3(0,0.5,0);
+    MVP3=rotate(MVP1, atan(cosAngle), axe_rotation);
     MVP3=translate(MVP3, centre_gravite);
-    MVP3=rotate(MVP3, atan(cosAngle), axe_rotation);
     MVP3=rotate(MVP3, glm::radians(horizontalAngle*100), Vec3(0,1,0));
     MVP3=translate(MVP3, -centre_gravite);
     Vec3 position_initiale=Vec3(0,0,0);
@@ -273,8 +274,6 @@ void draw () {
                 GL_UNSIGNED_SHORT,   // type
                 (void*)0           // element array buffer offset
                 );
-
-
     glDisableVertexAttribArray(0);
 }
 
