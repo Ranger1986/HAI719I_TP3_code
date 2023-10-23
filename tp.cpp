@@ -60,11 +60,12 @@ std::vector<glm::vec3> indexed_vertices;
 glm::mat4 ViewMatrix;
 glm::mat4 ProjectionMatrix;
 
-glm::mat4 MVP(2.0f);
+glm::mat4 MVP1(1.0f);
+glm::mat4 MVP2(1.0f);
 
 float shader_scale = 1;
 GLfloat shader_scaleLocation;
-Vec3 shader_translate = Vec3(0,0,0);
+Vec3 shader_translate = Vec3(-1,-2,0);
 GLfloat shader_translateLocation;
 
 glm::mat4 getViewMatrix(){
@@ -177,7 +178,15 @@ void draw () {
 
     // Send our transformation to the currently bound shader,
     // in the "Model View Projection" to the shader uniforms
-
+    
+    programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
+    glUseProgram(programID);
+    GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
+    shader_scaleLocation = glGetUniformLocation(programID, "scale");
+    shader_translateLocation = glGetUniformLocation(programID, "translate");
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP1[0][0]);
+    glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+    glUniform1f(shader_scaleLocation,shader_scale);
 
     // 1rst attribute buffer : vertices
     glEnableVertexAttribArray(0);
@@ -203,6 +212,30 @@ void draw () {
                 );
 
     // Afficher une seconde chaise
+    MVP2[0][0]=-1;
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP2[0][0]);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glVertexAttribPointer(
+                0,                  // attribute
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+                );
+
+    // Index buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+
+    // Draw the triangles !
+    glDrawElements(
+                GL_TRIANGLES,      // mode
+                indices.size(),    // count
+                GL_UNSIGNED_SHORT,   // type
+                (void*)0           // element array buffer offset
+                );
+
 
     // Afficher une troisieme chaise!
 
@@ -278,6 +311,10 @@ void key (unsigned char keyPressed, int x, int y) {
         //Completer : mettre à jour le y du Vec3 translate
         shader_translate[1]-=0.005;
         glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+        break;
+    case 'p': 
+        std::cout<< "Scale : " << shader_scale << std::endl; 
+        std::cout<< "translation : (" << shader_translate[0] << ',' << shader_translate[1] << ',' << shader_translate[2] << ')' << std::endl;        
         break;
     default:
         break;
@@ -368,6 +405,7 @@ void reshape(int w, int h) {
 }
 
 int main (int argc, char ** argv) {
+    shader_scale=2;
     if (argc > 2) {
         exit (EXIT_FAILURE);
     }
@@ -413,10 +451,6 @@ int main (int argc, char ** argv) {
     glUseProgram(programID);
     LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
 
-    GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
-    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP[0][0]);
-    shader_scaleLocation = glGetUniformLocation(programID, "scale");
-    shader_translateLocation = glGetUniformLocation(programID, "translate");
     glutMainLoop ();
 
     // Cleanup VBO and shader
