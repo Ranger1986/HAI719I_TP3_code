@@ -186,6 +186,7 @@ void draw () {
     GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
     shader_scaleLocation = glGetUniformLocation(programID, "scale");
     shader_translateLocation = glGetUniformLocation(programID, "translate");
+    /*
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP1[0][0]);
     glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
     glUniform1f(shader_scaleLocation,shader_scale);
@@ -238,15 +239,18 @@ void draw () {
                 (void*)0           // element array buffer offset
                 );
 
-
+    */
     // Afficher une troisieme chaise!
+    Vec3 axe_rotation=normalize(cross(Vec3(0,1,0),Vec3(1,1,1)));
+    float cosAngle = dot(Vec3(0,1,0),Vec3(1,1,1));
     Vec3 centre_gravite=Vec3(0,0.5,0);
-    MVP3=translate(MVP1, centre_gravite);
-    MVP3=rotate(MVP3, glm::radians(MVP3_rotation), Vec3(0.0f,0.0f,1.0f));
+    MVP3=translate(MVP3, centre_gravite);
+    MVP3=rotate(MVP3, atan(cosAngle), axe_rotation);
+    MVP3=rotate(MVP3, glm::radians(horizontalAngle*100), Vec3(0,1,0));
     MVP3=translate(MVP3, -centre_gravite);
     Vec3 position_initiale=Vec3(0,0,0);
     glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
-    glUniform1f(shader_scaleLocation,1);
+    glUniform1f(shader_scaleLocation,2);
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP3[0][0]);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
@@ -420,11 +424,10 @@ void motion (int x, int y) {
 }
 
 void computeMatricesFromInputs(float moveX, float moveY){
-    std::cout << moveX << " " << moveY << std::endl;
+    //std::cout << moveX << " " << moveY << std::endl;
 	// Compute new orientation
 	horizontalAngle += mouseSpeed * moveX / 10.f;
 	verticalAngle   += mouseSpeed * moveY / 10.f;
-
 	// Up vector
 	glm::vec3 up = glm::cross( rightVector(), directionVector() );
 
@@ -474,7 +477,7 @@ int main (int argc, char ** argv) {
     programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
 
     //Chargement du fichier de maillage
-    std::string filename("data/chair.off");
+    std::string filename("data/suzanne.off");
     loadOFF(filename, indexed_vertices, indices, triangles );
 
     // Load it into a VBO
