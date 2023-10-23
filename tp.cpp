@@ -62,11 +62,13 @@ glm::mat4 ProjectionMatrix;
 
 glm::mat4 MVP1(1.0f);
 glm::mat4 MVP2(1.0f);
+glm::mat4 MVP3(1.0f);
 
-float shader_scale = 1;
+float shader_scale = 2;
 GLfloat shader_scaleLocation;
 Vec3 shader_translate = Vec3(-1,-2,0);
 GLfloat shader_translateLocation;
+float MVP3_rotation=0;
 
 glm::mat4 getViewMatrix(){
 	return ViewMatrix;
@@ -238,6 +240,36 @@ void draw () {
 
 
     // Afficher une troisieme chaise!
+    Vec3 centre_gravite=Vec3(0,0.5,0);
+    MVP3=translate(MVP1, centre_gravite);
+    MVP3=rotate(MVP3, glm::radians(MVP3_rotation), Vec3(0.0f,0.0f,1.0f));
+    MVP3=translate(MVP3, -centre_gravite);
+    Vec3 position_initiale=Vec3(0,0,0);
+    glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
+    glUniform1f(shader_scaleLocation,1);
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP3[0][0]);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glVertexAttribPointer(
+                0,                  // attribute
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+                );
+
+    // Index buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+
+    // Draw the triangles !
+    glDrawElements(
+                GL_TRIANGLES,      // mode
+                indices.size(),    // count
+                GL_UNSIGNED_SHORT,   // type
+                (void*)0           // element array buffer offset
+                );
+
 
     glDisableVertexAttribArray(0);
 }
@@ -316,6 +348,16 @@ void key (unsigned char keyPressed, int x, int y) {
         std::cout<< "Scale : " << shader_scale << std::endl; 
         std::cout<< "translation : (" << shader_translate[0] << ',' << shader_translate[1] << ',' << shader_translate[2] << ')' << std::endl;        
         break;
+    case 'l': //Press z key to translate on y positive
+        //Completer : mettre à jour le y du Vec3 translate
+        MVP3_rotation+=1;
+        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+        break;
+
+    case 'm': //Press s key to translate on y negative
+        //Completer : mettre à jour le y du Vec3 translate
+        MVP3_rotation-=1;
+        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
     default:
         break;
     }
@@ -405,7 +447,6 @@ void reshape(int w, int h) {
 }
 
 int main (int argc, char ** argv) {
-    shader_scale=2;
     if (argc > 2) {
         exit (EXIT_FAILURE);
     }
