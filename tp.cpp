@@ -463,7 +463,7 @@ int main (int argc, char ** argv) {
     programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
 
     //Chargement du fichier de maillage
-    std::string filename("data/suzanne.off");
+    std::string filename("data/sphere.off");
     loadOFF(filename, indexed_vertices, indices, triangles );
 
     // Load it into a VBO
@@ -480,6 +480,7 @@ int main (int argc, char ** argv) {
     // Get a handle for our "LightPosition" uniform
     glUseProgram(programID);
     LightID = glGetUniformLocation(programID, "LightPosition_worldspace");
+    glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
     glutMainLoop ();
 
