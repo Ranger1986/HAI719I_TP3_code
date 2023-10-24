@@ -20,6 +20,14 @@ using Vec3 = glm::vec3;
 #include "src/shader.hpp"
 #include "src/objloader.hpp"
 
+// question
+int question = 0;
+int const Q1_2 = 1;
+int const Q1_3 = 2;
+int const Q1_4 = 3;
+int const Q3 = 4;
+int const Q4 = 5;
+
 // settings
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
@@ -47,28 +55,40 @@ static bool fullScreen = false;
 
 GLuint programID;
 GLuint VertexArrayID;
-GLuint vertexbuffer;
-GLuint elementbuffer;
 GLuint LightID;
 
-
-std::vector<unsigned short> indices; //Triangles concaténés dans une liste
-std::vector<std::vector<unsigned short> > triangles;
-std::vector<glm::vec3> indexed_vertices;
+//chaise
+std::vector<unsigned short> chair_indices; //Triangles concaténés dans une liste
+std::vector<std::vector<unsigned short> > chair_triangles;
+std::vector<glm::vec3> chair_indexed_vertices;
+GLuint chair_vertexbuffer;
+GLuint chair_elementbuffer;
+//suzanne
+std::vector<unsigned short> suzanne_indices; //Triangles concaténés dans une liste
+std::vector<std::vector<unsigned short> > suzanne_triangles;
+std::vector<glm::vec3> suzanne_indexed_vertices;
+GLuint suzanne_vertexbuffer;
+GLuint suzanne_elementbuffer;
+//sphere
+std::vector<unsigned short> sphere_indices; //Triangles concaténés dans une liste
+std::vector<std::vector<unsigned short> > sphere_triangles;
+std::vector<glm::vec3> sphere_indexed_vertices;
+GLuint sphere_vertexbuffer;
+GLuint sphere_elementbuffer;
 
 
 glm::mat4 ViewMatrix;
 glm::mat4 ProjectionMatrix;
 
-glm::mat4 MVP1(1.0f);
-glm::mat4 MVP2(1.0f);
-glm::mat4 MVP3(1.0f);
+glm::mat4 matrice_identity(1.0f);
 
+//scale
 float shader_scale = 1;
 GLfloat shader_scaleLocation;
+//translate 
 Vec3 shader_translate = Vec3(0,0,0);
 GLfloat shader_translateLocation;
-float MVP3_rotation=0;
+//rotation
 float rotation_dynamique=0;
 
 glm::mat4 getViewMatrix(){
@@ -114,6 +134,14 @@ void computeMatricesFromInputs(float moveX, float moveY);
 void initLight ();
 void init ();
 void draw ();
+void drawChairModel();
+void drawSuzanneModel();
+void drawSphereModel();
+void drawOneChair();
+void drawMultipleChair();
+void drawSuzanne();
+void drawWithCam();
+void drawSolarSystem();
 void display ();
 void idle ();
 void key (unsigned char keyPressed, int x, int y);
@@ -122,8 +150,73 @@ void motion (int x, int y);
 void reshape(int w, int h);
 int main (int argc, char ** argv);
 void printMatrix(const glm::mat4& mat);
+void aide();
+void changeQuestion();
 
 // ------------------------------------
+
+void aide(){
+    std::cout << "- - - - - - - - - -" << std::endl;
+    std::cout << "Touche :" << std::endl;
+    std::cout << "q : quitter la fenetre" << std::endl;
+    std::cout << "h : donne les touches a utiliser" << std::endl;
+    std::cout << "/ : montre le visuel de la prochaine question\n/!/ selon les questions les touchesS ne seront pas forcement les mêmes" << std::endl;
+    switch (question)
+    {
+    case Q1_2:
+        std::cout << "- : reduit la chaise" << std::endl;
+        std::cout << "+ : grossis la chaise" << std::endl;
+        std::cout << "6 : decale la chaise vers la droite" << std::endl;
+        std::cout << "4 : decale la chaise vers la gauche" << std::endl;
+        std::cout << "8 : decale la chaise vers le haut" << std::endl;
+        std::cout << "2 : decale la chaise vers le bas" << std::endl;
+        break;
+    case Q1_3:
+        std::cout << "6 : fait tourner la chaise dans le sens anti-horaire" << std::endl;
+        std::cout << "4 : fait tourner la chaise dans le sens horaire" << std::endl;
+        break;
+    case Q4:
+    case Q3:
+        std::cout << "- : dezoom" << std::endl;
+        std::cout << "+ : zoom" << std::endl;
+        std::cout << "/!/ il y a possibilité de bouger la camera avec la souris" << std::endl;
+    case Q1_4:
+        std::cout << "6 : realise une rotation sur x de l'entite" << std::endl;
+        std::cout << "4 : realise une rotation sur x de l'entite" << std::endl;
+        break;
+    default:
+        break;
+    }
+
+}
+
+void changeQuestion(){
+    shader_scale=1;
+    shader_translate=Vec3(0,0,0);
+    angle=0;
+    if (question<5){question++;}
+    else {question=1;}
+    switch (question)
+    {
+    case Q1_2:
+        glutSetWindowTitle("TP3-HAI719I-Q1.2");
+        break;
+    case Q1_3:
+        glutSetWindowTitle("TP3-HAI719I-Q1.3");
+        break;
+    case Q1_4:
+        glutSetWindowTitle("TP3-HAI719I-Q1.4");
+        break;
+    case Q3:
+        glutSetWindowTitle("TP3-HAI719I-Q3");
+        break;
+    case Q4:
+        glutSetWindowTitle("TP3-HAI719I-Q4");
+        break;
+    default:
+        break;
+    }
+}
 
 void printMatrix(const glm::mat4& mat) {
     std::cout << mat[0][0] << " " << mat[1][0] << " " << mat[2][0] << " " << mat[3][0] << "\n" << mat[0][1] << " " << mat[1][1] << " " << mat[2][1] << " " << mat[3][1] << "\n" << mat[0][2] << " " << mat[1][2] << " " << mat[2][2] << " " << mat[3][2] << "\n" << mat[0][3] << " " << mat[1][3] << " " << mat[2][3] << " " << mat[3][3] << std::endl;
@@ -173,88 +266,205 @@ void init () {
 
 void draw () {
     glUseProgram(programID);
-    // Model matrix : an identity matrix (model will be at the origin) then change
+    glEnableVertexAttribArray(0);
+    switch (question)
+    {
+    case Q1_2:
+        drawOneChair();
+        break;
+    case Q1_3:
+        drawMultipleChair();
+        break;
+    case Q1_4:
+        drawSuzanne();
+        break;
+    case Q3:
+        drawWithCam();
+        break;
+    case Q4:
+        drawSolarSystem();
+        break;
+    default:
+        break;
+    }
+    glDisableVertexAttribArray(0);
+}
 
-    // View matrix : camera/view transformation lookat() utiliser camera_position camera_target camera_up
+void drawChairModel(){
+    // 1rst attribute buffer : vertices
+    glBindBuffer(GL_ARRAY_BUFFER, chair_vertexbuffer);
+    glVertexAttribPointer(
+                0,                  // attribute
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+                );
 
-    // Projection matrix : 45 Field of View, 4:3 ratio, display range : 0.1 unit <-> 100 units
+    // Index buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chair_elementbuffer);
 
-    // Send our transformation to the currently bound shader,
-    // in the "Model View Projection" to the shader uniforms
-    
-    programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
-    glUseProgram(programID);
+    // Draw the triangles !
+    glDrawElements(
+                GL_TRIANGLES,      // mode
+                chair_indices.size(),    // count
+                GL_UNSIGNED_SHORT,   // type
+                (void*)0           // element array buffer offset
+    );
+}
+void drawSuzanneModel(){
+    // 1rst attribute buffer : vertices
+    glBindBuffer(GL_ARRAY_BUFFER, suzanne_vertexbuffer);
+    glVertexAttribPointer(
+                0,                  // attribute
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+                );
+
+    // Index buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, suzanne_elementbuffer);
+
+    // Draw the triangles !
+    glDrawElements(
+                GL_TRIANGLES,      // mode
+                suzanne_indices.size(),    // count
+                GL_UNSIGNED_SHORT,   // type
+                (void*)0           // element array buffer offset
+    );
+}
+void drawSphereModel(){
+    // 1rst attribute buffer : vertices
+    glBindBuffer(GL_ARRAY_BUFFER, sphere_vertexbuffer);
+    glVertexAttribPointer(
+                0,                  // attribute
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+                );
+
+    // Index buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere_elementbuffer);
+
+    // Draw the triangles !
+    glDrawElements(
+                GL_TRIANGLES,      // mode
+                sphere_indices.size(),    // count
+                GL_UNSIGNED_SHORT,   // type
+                (void*)0           // element array buffer offset
+    );
+}
+void drawOneChair(){
+    GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
+    shader_scaleLocation = glGetUniformLocation(programID, "scale");
+    shader_translateLocation = glGetUniformLocation(programID, "translate");
+    glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+    glUniform1f(shader_scaleLocation,shader_scale);
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&matrice_identity[0][0]);
+    drawChairModel();
+}
+
+void drawMultipleChair(){
+    GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
+    shader_scaleLocation = glGetUniformLocation(programID, "scale");
+    shader_translateLocation = glGetUniformLocation(programID, "translate");
+    mat4 static_MVP1=matrice_identity;
+    Vec3 translate_vector=Vec3(-1,-2,0);
+    float chair_scale=2;
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&static_MVP1[0][0]);
+    glUniform3fv(shader_translateLocation,1,&translate_vector[0]);
+    glUniform1f(shader_scaleLocation,chair_scale);
+    drawChairModel();
+
+    // Afficher une seconde chaise
+    mat4 static_MVP2=matrice_identity;
+    static_MVP2[0][0]=-1;
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&static_MVP2[0][0]);
+    drawChairModel();
+
+
+    // Afficher une troisieme chaise!
+    Vec3 centre_gravite=Vec3(0,0.5,0);
+    mat4 MVP=translate(matrice_identity, centre_gravite);
+    MVP=rotate(MVP, glm::radians(angle), Vec3(0,0,1));
+    MVP=translate(MVP, -centre_gravite);
+    Vec3 position_initiale=Vec3(0,0,0);
+    glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
+    glUniform1f(shader_scaleLocation,1);
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP[0][0]);
+    drawChairModel();
+}
+void drawSuzanne(){
     GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
     shader_scaleLocation = glGetUniformLocation(programID, "scale");
     shader_translateLocation = glGetUniformLocation(programID, "translate");
 
-   
-    // soleil
+    Vec3 axe_rotation=normalize(cross(Vec3(0,1,0),Vec3(1,1,1)));
     float cosAngle = dot(Vec3(0,1,0),Vec3(1,1,1));
+    Vec3 centre_gravite=Vec3(0,0.5,0);
+    mat4 MVP=rotate(matrice_identity, atan(cosAngle), axe_rotation);
+    MVP=translate(MVP, centre_gravite);
+    MVP=rotate(MVP, glm::radians(angle), Vec3(0,1,0));
+    MVP=translate(MVP, -centre_gravite);
+    Vec3 position_initiale=Vec3(0,0,0);
+    glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
+    glUniform1f(shader_scaleLocation,2);
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP[0][0]);
+    drawSuzanneModel();
+}
+void drawWithCam(){
+    GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
+    shader_scaleLocation = glGetUniformLocation(programID, "scale");
+    shader_translateLocation = glGetUniformLocation(programID, "translate");
+    Vec3 axe_rotation=normalize(cross(Vec3(0,1,0),Vec3(1,1,1)));
+    float cosAngle = dot(Vec3(0,1,0),Vec3(1,1,1));
+    Vec3 centre_gravite=Vec3(0,0.5,0);
+    mat4 MVP=mat4(1);
+    MVP=MVP*ProjectionMatrix*ViewMatrix;
+    MVP=rotate(MVP, atan(cosAngle), axe_rotation);
+    MVP=translate(MVP, centre_gravite);
+    MVP=rotate(MVP, glm::radians(angle), Vec3(0,1,0));
+    MVP=translate(MVP, -centre_gravite);
+    Vec3 position_initiale=Vec3(0,0,0);
+    glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
+    glUniform1f(shader_scaleLocation,2);
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP[0][0]);
+    drawSuzanneModel();
+}
+void drawSolarSystem(){
+    GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
+    shader_scaleLocation = glGetUniformLocation(programID, "scale");
+    shader_translateLocation = glGetUniformLocation(programID, "translate");
+    // soleil
     Vec3 centre_gravite=Vec3(0,0.5,0);
     mat4 MVPsoleil=mat4(1);
     MVPsoleil=MVPsoleil*ProjectionMatrix*ViewMatrix;
     //MVPsoleil=rotate(MVPsoleil, atan(cosAngle), Vec3(1,1,1));
     MVPsoleil=translate(MVPsoleil, centre_gravite);
-    MVPsoleil=rotate(MVPsoleil, glm::radians(rotation_dynamique), Vec3(0,1,0));
+    MVPsoleil=rotate(MVPsoleil, glm::radians(angle), Vec3(0,1,0));
     MVPsoleil=translate(MVPsoleil, -centre_gravite);
     Vec3 position_soleil=Vec3(0,0,0);
     glUniform3fv(shader_translateLocation,1,&position_soleil[0]);
     glUniform1f(shader_scaleLocation,2);
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPsoleil[0][0]);
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-                0,                  // attribute
-                3,                  // size
-                GL_FLOAT,           // type
-                GL_FALSE,           // normalized?
-                0,                  // stride
-                (void*)0            // array buffer offset
-                );
-
-    // Index buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-
-    // Draw the triangles !
-    glDrawElements(
-                GL_TRIANGLES,      // mode
-                indices.size(),    // count
-                GL_UNSIGNED_SHORT,   // type
-                (void*)0           // element array buffer offset
-                );
-
+    drawSphereModel();
     
+    //terre
     mat4 MVPterre=mat4(1);
 
     MVPterre=MVPterre*ProjectionMatrix*ViewMatrix;
-    MVPterre=rotate(MVPterre, glm::radians(rotation_dynamique), Vec3(0,1,0));
+    MVPterre=rotate(MVPterre, glm::radians(angle), Vec3(0,1,0));
 
     Vec3 position_terre=Vec3(5,0,0);
     glUniform3fv(shader_translateLocation,1,&position_terre[0]);
     glUniform1f(shader_scaleLocation,5);
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPterre[0][0]);
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-                0,                  // attribute
-                3,                  // size
-                GL_FLOAT,           // type
-                GL_FALSE,           // normalized?
-                0,                  // stride
-                (void*)0            // array buffer offset
-                );
-
-    // Index buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-
-    // Draw the triangles !
-    glDrawElements(
-                GL_TRIANGLES,      // mode
-                indices.size(),    // count
-                GL_UNSIGNED_SHORT,   // type
-                (void*)0           // element array buffer offset
-                );
+    drawSphereModel();
     /*
     mat4 MVPlune=mat4(1);
 
@@ -313,7 +523,6 @@ void idle () {
 }
 
 void key (unsigned char keyPressed, int x, int y) {
-    float cameraSpeed = 2.5 * deltaTime;
     switch (keyPressed) {
     case 'f':
         if (fullScreen == true) {
@@ -324,45 +533,42 @@ void key (unsigned char keyPressed, int x, int y) {
             fullScreen = true;
         }
         break;
-    /*
-    case 's':
-        camera_position -= cameraSpeed * camera_target;
+    case 'q':
+        exit (0);
         break;
-
-    case 'w':
-        camera_position += cameraSpeed * camera_target;
+    case 'h':
+        aide();
         break;
-    */
+    case '/':
+        changeQuestion();
+        break;
     case '+': //Press + key to increase scale
-        shader_scale-=0.005;
-        glUniform1f(shader_scaleLocation,shader_scale);
-        break;
-
-    case '-': //Press - key to decrease scale
-        shader_scale+=0.005;
-        glUniform1f(shader_scaleLocation,shader_scale);
-        break;
-    case 'z':
+        shader_scale-=0.1;
         camera_position+=0.1f*camera_target;
         computeMatricesFromInputs(0.f,0.f);
         break;
-    case 's':
+    case '-': //Press - key to decrease scale
+        shader_scale+=0.1;
         camera_position-=0.1f*camera_target;
         computeMatricesFromInputs(0.f,0.f);
         break;
-    case 'l': //Press z key to translate on y positive
-        //Completer : mettre à jour le y du Vec3 translate
-        rotation_dynamique+=1;
-        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+    case '8': 
+        shader_translate[1]+=0.1;
         break;
-    case 'm': //Press s key to translate on y negative
-        //Completer : mettre à jour le y du Vec3 translate
-        rotation_dynamique-=1;
-        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+    case '2': 
+        shader_translate[1]-=0.1;
+        break;
+    case '4': 
+        shader_translate[0]-=0.1;
+        angle--;
+        break;
+    case '6': 
+        shader_translate[0]+=0.1;
+        angle++;
+        break;
     default:
         break;
     }
-    //TODO add translationsscale
     idle ();
 }
 
@@ -447,13 +653,14 @@ void reshape(int w, int h) {
 }
 
 int main (int argc, char ** argv) {
+    aide();
     if (argc > 2) {
         exit (EXIT_FAILURE);
     }
     glutInit (&argc, argv);
     glutInitDisplayMode (GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
     glutInitWindowSize (SCR_WIDTH, SCR_HEIGHT);
-    window = glutCreateWindow ("TP HAI719I");
+    window = glutCreateWindow ("TP3-HAI719I");
 
     init ();
     glutIdleFunc (idle);
@@ -473,20 +680,56 @@ int main (int argc, char ** argv) {
     // Create and compile our GLSL program from the shaders
     programID = LoadShaders( "vertex_shader.glsl", "fragment_shader.glsl" );
 
+    //Chargement de la chaise
+
     //Chargement du fichier de maillage
-    std::string filename("data/sphere.off");
-    loadOFF(filename, indexed_vertices, indices, triangles );
+    std::string chair_file("data/chair.off");
+    loadOFF(chair_file, chair_indexed_vertices, chair_indices, chair_triangles );
 
     // Load it into a VBO
 
-    glGenBuffers(1, &vertexbuffer);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glBufferData(GL_ARRAY_BUFFER, indexed_vertices.size() * sizeof(glm::vec3), &indexed_vertices[0], GL_STATIC_DRAW);
+    glGenBuffers(1, &chair_vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, chair_vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, chair_indexed_vertices.size() * sizeof(glm::vec3), &chair_indexed_vertices[0], GL_STATIC_DRAW);
+    
+    // Generate a buffer for the indices as well
+    glGenBuffers(1, &chair_elementbuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, chair_elementbuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, chair_indices.size() * sizeof(unsigned short), &chair_indices[0] , GL_STATIC_DRAW);
+    
+    //Chargement de Suzanne
+    
+    //Chargement du fichier de maillage
+    std::string suzanne_file("data/suzanne.off");
+    loadOFF(suzanne_file, suzanne_indexed_vertices, suzanne_indices, suzanne_triangles );
+
+    // Load it into a VBO
+
+    glGenBuffers(1, &suzanne_vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, suzanne_vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, suzanne_indexed_vertices.size() * sizeof(glm::vec3), &suzanne_indexed_vertices[0], GL_STATIC_DRAW);
+    
+    // Generate a buffer for the indices as well
+    glGenBuffers(1, &suzanne_elementbuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, suzanne_elementbuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, suzanne_indices.size() * sizeof(unsigned short), &suzanne_indices[0] , GL_STATIC_DRAW);
+
+    //Chargement de la sphere
+
+    //Chargement du fichier de maillage
+    std::string filename("data/sphere.off");
+    loadOFF(filename, sphere_indexed_vertices, sphere_indices, sphere_triangles );
+
+    // Load it into a VBO
+
+    glGenBuffers(1, &sphere_vertexbuffer);
+    glBindBuffer(GL_ARRAY_BUFFER, sphere_vertexbuffer);
+    glBufferData(GL_ARRAY_BUFFER, sphere_indexed_vertices.size() * sizeof(glm::vec3), &sphere_indexed_vertices[0], GL_STATIC_DRAW);
 
     // Generate a buffer for the indices as well
-    glGenBuffers(1, &elementbuffer);
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-    glBufferData(GL_ELEMENT_ARRAY_BUFFER, indices.size() * sizeof(unsigned short), &indices[0] , GL_STATIC_DRAW);
+    glGenBuffers(1, &sphere_elementbuffer);
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, sphere_elementbuffer);
+    glBufferData(GL_ELEMENT_ARRAY_BUFFER, sphere_indices.size() * sizeof(unsigned short), &sphere_indices[0] , GL_STATIC_DRAW);
 
     // Get a handle for our "LightPosition" uniform
     glUseProgram(programID);
@@ -496,8 +739,12 @@ int main (int argc, char ** argv) {
     glutMainLoop ();
 
     // Cleanup VBO and shader
-    glDeleteBuffers(1, &vertexbuffer);
-    glDeleteBuffers(1, &elementbuffer);
+    glDeleteBuffers(1, &chair_vertexbuffer);
+    glDeleteBuffers(1, &chair_elementbuffer);
+    glDeleteBuffers(1, &suzanne_vertexbuffer);
+    glDeleteBuffers(1, &suzanne_elementbuffer);
+    glDeleteBuffers(1, &sphere_vertexbuffer);
+    glDeleteBuffers(1, &sphere_elementbuffer);
     glDeleteProgram(programID);
     glDeleteVertexArrays(1, &VertexArrayID);
 
