@@ -69,6 +69,7 @@ GLfloat shader_scaleLocation;
 Vec3 shader_translate = Vec3(0,0,0);
 GLfloat shader_translateLocation;
 float MVP3_rotation=0;
+float rotation_dynamique=0;
 
 glm::mat4 getViewMatrix(){
 	return ViewMatrix;
@@ -245,9 +246,15 @@ void draw () {
     Vec3 axe_rotation=normalize(cross(Vec3(0,1,0),Vec3(1,1,1)));
     float cosAngle = dot(Vec3(0,1,0),Vec3(1,1,1));
     Vec3 centre_gravite=Vec3(0,0.5,0);
-    MVP3=rotate(MVP1, atan(cosAngle), axe_rotation);
+    MVP3=mat4(1);
+    //MVP3=translate(MVP3, Vec3(0.5, 0.5, 0.5));
+    //MVP3=translate(MVP3, -Vec3(0.5, 0.5, 0.5));
+    
+    
+    MVP3=MVP3*ProjectionMatrix*ViewMatrix;
+    MVP3=rotate(MVP3, atan(cosAngle), axe_rotation);
     MVP3=translate(MVP3, centre_gravite);
-    MVP3=rotate(MVP3, glm::radians(horizontalAngle*100), Vec3(0,1,0));
+    MVP3=rotate(MVP3, glm::radians(rotation_dynamique), Vec3(0,1,0));
     MVP3=translate(MVP3, -centre_gravite);
     Vec3 position_initiale=Vec3(0,0,0);
     glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
@@ -306,7 +313,7 @@ void key (unsigned char keyPressed, int x, int y) {
             fullScreen = true;
         }
         break;
-
+    /*
     case 's':
         camera_position -= cameraSpeed * camera_target;
         break;
@@ -314,6 +321,7 @@ void key (unsigned char keyPressed, int x, int y) {
     case 'w':
         camera_position += cameraSpeed * camera_target;
         break;
+    */
     case '+': //Press + key to increase scale
         shader_scale-=0.005;
         glUniform1f(shader_scaleLocation,shader_scale);
@@ -323,43 +331,22 @@ void key (unsigned char keyPressed, int x, int y) {
         shader_scale+=0.005;
         glUniform1f(shader_scaleLocation,shader_scale);
         break;
-
-    case 'd': //Press d key to translate on x positive
-        //Completer : mettre à jour le x du Vec3 translate
-        shader_translate[0]+=0.005;
-        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
+    case 'z':
+        camera_position+=0.1f*camera_target;
+        computeMatricesFromInputs(0.f,0.f);
         break;
-
-    case 'q': //Press q key to translate on x negative
-        //Completer : mettre à jour le y du Vec3 translate
-        shader_translate[0]-=0.005;
-        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
-        break;
-
-    case 'z': //Press z key to translate on y positive
-        //Completer : mettre à jour le y du Vec3 translate
-        shader_translate[1]+=0.005;
-        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
-        break;
-
-    case 'x': //Press s key to translate on y negative
-        //Completer : mettre à jour le y du Vec3 translate
-        shader_translate[1]-=0.005;
-        glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
-        break;
-    case 'p': 
-        std::cout<< "Scale : " << shader_scale << std::endl; 
-        std::cout<< "translation : (" << shader_translate[0] << ',' << shader_translate[1] << ',' << shader_translate[2] << ')' << std::endl;        
+    case 's':
+        camera_position-=0.1f*camera_target;
+        computeMatricesFromInputs(0.f,0.f);
         break;
     case 'l': //Press z key to translate on y positive
         //Completer : mettre à jour le y du Vec3 translate
-        MVP3_rotation+=1;
+        rotation_dynamique+=1;
         glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
         break;
-
     case 'm': //Press s key to translate on y negative
         //Completer : mettre à jour le y du Vec3 translate
-        MVP3_rotation-=1;
+        rotation_dynamique-=1;
         glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
     default:
         break;
