@@ -187,79 +187,21 @@ void draw () {
     GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
     shader_scaleLocation = glGetUniformLocation(programID, "scale");
     shader_translateLocation = glGetUniformLocation(programID, "translate");
-    /*
-    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP1[0][0]);
-    glUniform3fv(shader_translateLocation,1,&shader_translate[0]);
-    glUniform1f(shader_scaleLocation,shader_scale);
 
-    // 1rst attribute buffer : vertices
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-                0,                  // attribute
-                3,                  // size
-                GL_FLOAT,           // type
-                GL_FALSE,           // normalized?
-                0,                  // stride
-                (void*)0            // array buffer offset
-                );
-
-    // Index buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-
-    // Draw the triangles !
-    glDrawElements(
-                GL_TRIANGLES,      // mode
-                indices.size(),    // count
-                GL_UNSIGNED_SHORT,   // type
-                (void*)0           // element array buffer offset
-                );
-
-    // Afficher une seconde chaise
-    MVP2[0][0]=-1;
-    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP2[0][0]);
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-                0,                  // attribute
-                3,                  // size
-                GL_FLOAT,           // type
-                GL_FALSE,           // normalized?
-                0,                  // stride
-                (void*)0            // array buffer offset
-                );
-
-    // Index buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-
-    // Draw the triangles !
-    glDrawElements(
-                GL_TRIANGLES,      // mode
-                indices.size(),    // count
-                GL_UNSIGNED_SHORT,   // type
-                (void*)0           // element array buffer offset
-                );
-
-    */
    
-    // Afficher une troisieme chaise!
-    Vec3 axe_rotation=normalize(cross(Vec3(0,1,0),Vec3(1,1,1)));
+    // soleil
     float cosAngle = dot(Vec3(0,1,0),Vec3(1,1,1));
     Vec3 centre_gravite=Vec3(0,0.5,0);
-    MVP3=mat4(1);
-    //MVP3=translate(MVP3, Vec3(0.5, 0.5, 0.5));
-    //MVP3=translate(MVP3, -Vec3(0.5, 0.5, 0.5));
-    
-    
-    MVP3=MVP3*ProjectionMatrix*ViewMatrix;
-    MVP3=rotate(MVP3, atan(cosAngle), axe_rotation);
-    MVP3=translate(MVP3, centre_gravite);
-    MVP3=rotate(MVP3, glm::radians(rotation_dynamique), Vec3(0,1,0));
-    MVP3=translate(MVP3, -centre_gravite);
-    Vec3 position_initiale=Vec3(0,0,0);
-    glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
+    mat4 MVPsoleil=mat4(1);
+    MVPsoleil=MVPsoleil*ProjectionMatrix*ViewMatrix;
+    //MVPsoleil=rotate(MVPsoleil, atan(cosAngle), Vec3(1,1,1));
+    MVPsoleil=translate(MVPsoleil, centre_gravite);
+    MVPsoleil=rotate(MVPsoleil, glm::radians(rotation_dynamique), Vec3(0,1,0));
+    MVPsoleil=translate(MVPsoleil, -centre_gravite);
+    Vec3 position_soleil=Vec3(0,0,0);
+    glUniform3fv(shader_translateLocation,1,&position_soleil[0]);
     glUniform1f(shader_scaleLocation,2);
-    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVP3[0][0]);
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPsoleil[0][0]);
     glEnableVertexAttribArray(0);
     glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
     glVertexAttribPointer(
@@ -281,7 +223,76 @@ void draw () {
                 GL_UNSIGNED_SHORT,   // type
                 (void*)0           // element array buffer offset
                 );
+
+    
+    mat4 MVPterre=mat4(1);
+
+    MVPterre=MVPterre*ProjectionMatrix*ViewMatrix;
+    MVPterre=rotate(MVPterre, glm::radians(rotation_dynamique), Vec3(0,1,0));
+
+    Vec3 position_terre=Vec3(5,0,0);
+    glUniform3fv(shader_translateLocation,1,&position_terre[0]);
+    glUniform1f(shader_scaleLocation,5);
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPterre[0][0]);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glVertexAttribPointer(
+                0,                  // attribute
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+                );
+
+    // Index buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+
+    // Draw the triangles !
+    glDrawElements(
+                GL_TRIANGLES,      // mode
+                indices.size(),    // count
+                GL_UNSIGNED_SHORT,   // type
+                (void*)0           // element array buffer offset
+                );
+    /*
+    mat4 MVPlune=mat4(1);
+
+    MVPlune=MVPlune*ProjectionMatrix*ViewMatrix;
+    //MVPlune=translate(MVPlune, centre_gravite);
+    //MVPlune=rotate(MVPlune, glm::radians(23.44f), Vec3(1,1,1));
+    //MVPlune=translate(MVPlune, -centre_gravite);
+
+    MVPlune=rotate(MVPlune, glm::radians(rotation_dynamique), Vec3(0,1,0));
+
+    Vec3 position_terre=Vec3(4,0,0);
+    glUniform3fv(shader_translateLocation,1,&position_terre[0]);
+    glUniform1f(shader_scaleLocation,10);
+    glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPlune[0][0]);
+    glEnableVertexAttribArray(0);
+    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
+    glVertexAttribPointer(
+                0,                  // attribute
+                3,                  // size
+                GL_FLOAT,           // type
+                GL_FALSE,           // normalized?
+                0,                  // stride
+                (void*)0            // array buffer offset
+                );
+
+    // Index buffer
+    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
+
+    // Draw the triangles !
+    glDrawElements(
+                GL_TRIANGLES,      // mode
+                indices.size(),    // count
+                GL_UNSIGNED_SHORT,   // type
+                (void*)0           // element array buffer offset
+                );
+
     glDisableVertexAttribArray(0);
+    */
 }
 
 
