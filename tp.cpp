@@ -90,7 +90,7 @@ Vec3 shader_translate = Vec3(0,0,0);
 GLfloat shader_translateLocation;
 
 //rotation
-float rotation_dynamique=0;
+bool rotation=false;
 
 glm::mat4 getViewMatrix(){
 	return ViewMatrix;
@@ -268,6 +268,7 @@ void init () {
 void draw () {
     glUseProgram(programID);
     glEnableVertexAttribArray(0);
+    if(rotation){angle++;}
     switch (question)
     {
     case Q1_2:
@@ -451,7 +452,7 @@ void drawSolarSystem(){
     MVPsoleil=translate(MVPsoleil, -centre_gravite);
     Vec3 position_initiale=Vec3(0,0,0);
     glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
-    glUniform1f(shader_scaleLocation,2);
+    glUniform1f(shader_scaleLocation,1);
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPsoleil[0][0]);
     drawSphereModel();
     
@@ -464,7 +465,7 @@ void drawSolarSystem(){
     MVPterre=translate(MVPterre, position_terre);
     MVPterre=rotate(MVPterre, glm::radians(23.44f), Vec3(1,0,0));
     glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
-    glUniform1f(shader_scaleLocation,5);
+    glUniform1f(shader_scaleLocation,10);
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPterre[0][0]);
     drawSphereModel();
 
@@ -474,9 +475,10 @@ void drawSolarSystem(){
     MVPlune=MVPlune*ProjectionMatrix*ViewMatrix;
     MVPlune=rotate(MVPlune, glm::radians(angle), Vec3(0,1,0));
     MVPlune=translate(MVPlune, position_terre);
-    Vec3 position_lune=Vec3(1,0,0);
+    Vec3 position_lune=Vec3(0.5,0,0);
     MVPlune=rotate(MVPlune, glm::radians(angle), Vec3(0,1,0));
     MVPlune=translate(MVPlune, position_lune);
+    MVPterre=rotate(MVPterre, glm::radians(6.68f), Vec3(1,0,0));
     /*
     //MVPlune=translate(MVPlune, centre_gravite);
     //MVPlune=rotate(MVPlune, glm::radians(23.44f), Vec3(1,1,1));
@@ -487,7 +489,7 @@ void drawSolarSystem(){
     Vec3 position_terre=Vec3(4,0,0);
     */
     glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
-    glUniform1f(shader_scaleLocation,10);
+    glUniform1f(shader_scaleLocation,50);
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPlune[0][0]);
    drawSphereModel();
 }
@@ -552,6 +554,9 @@ void key (unsigned char keyPressed, int x, int y) {
     case '6': 
         shader_translate[0]+=0.1;
         angle++;
+        break;
+    case 'r': 
+        rotation = !rotation;
         break;
     default:
         break;
