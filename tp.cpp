@@ -21,7 +21,7 @@ using Vec3 = glm::vec3;
 #include "src/objloader.hpp"
 
 // question
-int question = 0;
+int question = 5;
 int const Q1_2 = 1;
 int const Q1_3 = 2;
 int const Q1_4 = 3;
@@ -88,6 +88,7 @@ GLfloat shader_scaleLocation;
 //translate 
 Vec3 shader_translate = Vec3(0,0,0);
 GLfloat shader_translateLocation;
+
 //rotation
 float rotation_dynamique=0;
 
@@ -370,6 +371,7 @@ void drawOneChair(){
 }
 
 void drawMultipleChair(){
+    // Afficher une premiere chaise
     GLfloat MVPlocation = glGetUniformLocation(programID, "MVP");
     shader_scaleLocation = glGetUniformLocation(programID, "scale");
     shader_translateLocation = glGetUniformLocation(programID, "translate");
@@ -444,12 +446,11 @@ void drawSolarSystem(){
     Vec3 centre_gravite=Vec3(0,0.5,0);
     mat4 MVPsoleil=mat4(1);
     MVPsoleil=MVPsoleil*ProjectionMatrix*ViewMatrix;
-    //MVPsoleil=rotate(MVPsoleil, atan(cosAngle), Vec3(1,1,1));
     MVPsoleil=translate(MVPsoleil, centre_gravite);
     MVPsoleil=rotate(MVPsoleil, glm::radians(angle), Vec3(0,1,0));
     MVPsoleil=translate(MVPsoleil, -centre_gravite);
-    Vec3 position_soleil=Vec3(0,0,0);
-    glUniform3fv(shader_translateLocation,1,&position_soleil[0]);
+    Vec3 position_initiale=Vec3(0,0,0);
+    glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
     glUniform1f(shader_scaleLocation,2);
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPsoleil[0][0]);
     drawSphereModel();
@@ -459,16 +460,24 @@ void drawSolarSystem(){
 
     MVPterre=MVPterre*ProjectionMatrix*ViewMatrix;
     MVPterre=rotate(MVPterre, glm::radians(angle), Vec3(0,1,0));
-
-    Vec3 position_terre=Vec3(5,0,0);
-    glUniform3fv(shader_translateLocation,1,&position_terre[0]);
+    Vec3 position_terre=Vec3(2,0,0);
+    MVPterre=translate(MVPterre, position_terre);
+    MVPterre=rotate(MVPterre, glm::radians(23.44f), Vec3(1,0,0));
+    glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
     glUniform1f(shader_scaleLocation,5);
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPterre[0][0]);
     drawSphereModel();
-    /*
-    mat4 MVPlune=mat4(1);
 
+    //lune
+
+    mat4 MVPlune=mat4(1);
     MVPlune=MVPlune*ProjectionMatrix*ViewMatrix;
+    MVPlune=rotate(MVPlune, glm::radians(angle), Vec3(0,1,0));
+    MVPlune=translate(MVPlune, position_terre);
+    Vec3 position_lune=Vec3(1,0,0);
+    MVPlune=rotate(MVPlune, glm::radians(angle), Vec3(0,1,0));
+    MVPlune=translate(MVPlune, position_lune);
+    /*
     //MVPlune=translate(MVPlune, centre_gravite);
     //MVPlune=rotate(MVPlune, glm::radians(23.44f), Vec3(1,1,1));
     //MVPlune=translate(MVPlune, -centre_gravite);
@@ -476,33 +485,11 @@ void drawSolarSystem(){
     MVPlune=rotate(MVPlune, glm::radians(rotation_dynamique), Vec3(0,1,0));
 
     Vec3 position_terre=Vec3(4,0,0);
-    glUniform3fv(shader_translateLocation,1,&position_terre[0]);
+    */
+    glUniform3fv(shader_translateLocation,1,&position_initiale[0]);
     glUniform1f(shader_scaleLocation,10);
     glUniformMatrix4fv(MVPlocation,1,GL_FALSE,&MVPlune[0][0]);
-    glEnableVertexAttribArray(0);
-    glBindBuffer(GL_ARRAY_BUFFER, vertexbuffer);
-    glVertexAttribPointer(
-                0,                  // attribute
-                3,                  // size
-                GL_FLOAT,           // type
-                GL_FALSE,           // normalized?
-                0,                  // stride
-                (void*)0            // array buffer offset
-                );
-
-    // Index buffer
-    glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, elementbuffer);
-
-    // Draw the triangles !
-    glDrawElements(
-                GL_TRIANGLES,      // mode
-                indices.size(),    // count
-                GL_UNSIGNED_SHORT,   // type
-                (void*)0           // element array buffer offset
-                );
-
-    glDisableVertexAttribArray(0);
-    */
+   drawSphereModel();
 }
 
 
