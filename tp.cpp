@@ -161,6 +161,7 @@ void aide(){
     std::cout << "Touche :" << std::endl;
     std::cout << "q : quitter la fenetre" << std::endl;
     std::cout << "h : donne les touches a utiliser" << std::endl;
+    std::cout << "r : enclenche la rotation automatique" << std::endl;
     std::cout << "/ : montre le visuel de la prochaine question\n/!/ selon les questions les touchesS ne seront pas forcement les mêmes" << std::endl;
     switch (question)
     {
